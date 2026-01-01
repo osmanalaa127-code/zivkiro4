@@ -8,8 +8,7 @@
     <style>
         
       body {
-        background: linear-gradient(135deg, #0f2027 0%, #2c5364 100%);
-        color: #e0e0e0;
+        background: #1C1C1E;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -24,36 +23,33 @@
         min-height: 300px;
         max-width: 800px;
         margin: 30px 0 30px 0;
-        background: linear-gradient(120deg, #232526 0%, #414345 100%);
+        background: #F5F5F6;
         border-radius: 32px;
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
         border: 1px solid rgba(255,255,255,0.08);
         flex-shrink: 0;
         transition: box-shadow 0.3s;
       }
-      model-viewer:hover {
-        box-shadow: 0 16px 48px 0 rgba(31, 38, 135, 0.55);
-      }
+    
 
       .text-box {
         width: 80%;
         padding: 24px 32px;
         margin: 24px 0;
         max-width: 800px;
-        color: #e0e0e0;
+        color: #F5F5F6;
         text-align: center;
         box-sizing: border-box;
         margin-bottom: 24px;
         font-family: 'Segoe UI', 'Arial', 'Helvetica', sans-serif;
-        background: linear-gradient(120deg, rgba(44,83,100,0.85) 0%, rgba(31,38,135,0.45) 100%);
+        font-size: 16px;
         border-radius: 24px;
-        box-shadow: 0 4px 24px 0 rgba(31, 38, 135, 0.25);
-        border: 1px solid rgba(255,255,255,0.08);
+        
+        
         backdrop-filter: blur(4px);
         letter-spacing: 0.5px;
       }
       .text-box a {
-        color: #00fff7;
+        color: #F5F5F6;
         text-decoration: none;
         font-weight: 600;
         transition: color 0.2s;
@@ -63,18 +59,67 @@
         text-shadow: 0 0 8px #00fff7;
       }
 
+      .controls {
+        width: 80%;
+        max-width: 800px;
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        margin-bottom: 16px;
+      }
+      .control-btn {
+        background: rgba(255,255,255,0.06);
+        color: #F5F5F6;
+        border: 1px solid rgba(255,255,255,0.08);
+        width: 44px;
+        height: 44px;
+        padding: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: background 0.15s, transform 0.08s;
+      }
+      .control-btn .icon {
+        width: 20px;
+        height: 20px;
+        display: block;
+      }
+      /* unmute icon hidden by default; toggled with .muted */
+      .control-btn .icon-unmute {
+        display: none;
+      }
+      .control-btn.muted .icon-mute {
+        display: none;
+      }
+      .control-btn.muted .icon-unmute {
+        display: block;
+      }
+      .control-btn:hover {
+        background: rgba(255,255,255,0.1);
+        transform: translateY(-1px);
+      }
+      .control-btn:active {
+        transform: translateY(0);
+      }
+      .control-btn:focus {
+        outline: 2px solid #00fff7;
+        outline-offset: 2px;
+      }
+
       h2 {
         margin: 32px 0 16px 0;
         padding: 12px 32px;
-        color: #00fff7;
+        color: #F5F5F6;
         font-size: 2.2rem;
         font-family: 'Orbitron', 'Segoe UI', 'Arial', sans-serif;
         letter-spacing: 2px;
-        text-shadow: 0 0 16px #00fff7, 0 0 32px #232526;
+        
         border-radius: 16px;
-        background: rgba(44,83,100,0.25);
-        border: 1px solid rgba(255,255,255,0.08);
-        box-shadow: 0 2px 12px 0 rgba(31, 38, 135, 0.15);
+        
+        
       }
       @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
     </style>
@@ -92,10 +137,58 @@
                 ar-modes="webxr scene-viewer quick-look" 
                 environment-image="neutral">   
   </model-viewer>
+
+  <div class="controls" role="group" aria-label="Player controls">
+    <button id="playBtn" class="control-btn" title="Play" aria-label="Play">
+      <svg class="icon icon-play" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M5 3.868v16.264A1 1 0 0 0 6.6 21.2L19 12 6.6 2.8A1 1 0 0 0 5 3.868z"/></svg>
+    </button>
+    <button id="pauseBtn" class="control-btn" title="Pause" aria-label="Pause">
+      <svg class="icon icon-pause" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M6 5h3v14H6zM15 5h3v14h-3z"/></svg>
+    </button>
+    <button id="muteBtn" class="control-btn" title="Mute" aria-label="Mute">
+      <svg class="icon icon-mute" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M5 9v6h4l5 5V4L9 9H5z"/></svg>
+      <svg class="icon icon-unmute" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="display:none"><path d="M5 9v6h4l5 5V4L9 9H5z"/><path d="M16.5 7a6 6 0 0 1 0 10M19 4a9 9 0 0 1 0 16"/></svg>
+    </button>
+  </div>
+
+  <div class="text-box">
+    <p>Starte die AR-Ansicht, um die Kamera zu aktivieren. Das Modell lässt sich drehen; wende es, um die Schritte auch von der Rückseite zu betrachten</p>
+  </div>
    
 
 
 
+
+  <script>
+    (function(){
+      const mv = document.querySelector('model-viewer');
+      const playBtn = document.getElementById('playBtn');
+      const pauseBtn = document.getElementById('pauseBtn');
+      const muteBtn = document.getElementById('muteBtn');
+      let isMuted = mv && mv.hasAttribute && mv.hasAttribute('muted');
+
+      if (isMuted && muteBtn) {
+        muteBtn.classList.add('muted');
+        muteBtn.setAttribute('aria-label','Unmute');
+      }
+
+      if (playBtn) playBtn.addEventListener('click', ()=> { if (mv && mv.play) mv.play(); });
+      if (pauseBtn) pauseBtn.addEventListener('click', ()=> { if (mv && mv.pause) mv.pause(); });
+      if (muteBtn) muteBtn.addEventListener('click', ()=> {
+        isMuted = !isMuted;
+        if (!mv) return;
+        if (isMuted) {
+          mv.setAttribute('muted','');
+          muteBtn.classList.add('muted');
+          muteBtn.setAttribute('aria-label','Unmute');
+        } else {
+          mv.removeAttribute('muted');
+          muteBtn.classList.remove('muted');
+          muteBtn.setAttribute('aria-label','Mute');
+        }
+      });
+    })();
+  </script>
 
 </body>
 </html>
