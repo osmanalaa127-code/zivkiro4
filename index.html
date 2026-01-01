@@ -105,7 +105,7 @@
         transform: translateY(0);
       }
       .control-btn:focus {
-        outline: 2px solid #00fff7;
+        outline: 2px solid #F3C440;
         outline-offset: 2px;
       }
 
@@ -151,7 +151,7 @@
     </button>
   </div>
 
-  <audio id="voiceAudio" src="Timeline 1.mp3" preload="auto"></audio>
+  <audio id="voiceAudio" src="Timeline 1.mp3" preload="auto" loop></audio>
 
   <div class="text-box">
     <p>Starte die AR-Ansicht, um die Kamera zu aktivieren. Das Modell lässt sich drehen; wende es, um die Schritte auch von der Rückseite zu betrachten</p>
@@ -197,10 +197,23 @@
 
       // audio -> model
       if (audio) {
-        audio.addEventListener('timeupdate', syncModelToAudio);
+        // ensure audio is looping
+        audio.loop = true;
+        let lastAudioTime = 0;
+        audio.addEventListener('timeupdate', ()=>{
+          if (!audio || !mv) return;
+          // detect loop (audio currentTime jumped backwards)
+          if (lastAudioTime && audio.currentTime < lastAudioTime - 0.1) {
+            try { mv.currentTime = 0; } catch(e) {}
+            if (mv && mv.paused && mv.play) mv.play();
+          }
+          syncModelToAudio();
+          lastAudioTime = audio.currentTime;
+        });
         audio.addEventListener('seeked', syncModelToAudio);
         audio.addEventListener('play', ()=>{ if (mv && mv.paused) mv.play(); });
         audio.addEventListener('pause', ()=>{ if (mv && !mv.paused) mv.pause(); });
+        // ended may not fire when loop is true, but keep for safety
         audio.addEventListener('ended', ()=>{ if (mv && !mv.paused) mv.pause(); });
       }
 
