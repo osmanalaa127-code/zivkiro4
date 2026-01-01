@@ -151,6 +151,8 @@
     </button>
   </div>
 
+  <audio id="voiceAudio" src="Timeline 1.mp3" preload="auto"></audio>
+
   <div class="text-box">
     <p>Starte die AR-Ansicht, um die Kamera zu aktivieren. Das Modell lässt sich drehen; wende es, um die Schritte auch von der Rückseite zu betrachten</p>
   </div>
@@ -165,30 +167,93 @@
       const playBtn = document.getElementById('playBtn');
       const pauseBtn = document.getElementById('pauseBtn');
       const muteBtn = document.getElementById('muteBtn');
+      const audio = document.getElementById('voiceAudio');
       let isMuted = mv && mv.hasAttribute && mv.hasAttribute('muted');
+      let usingTTS = false;
 
+      // if audio fails or is unavailable, fall back to TTS
+      if (!audio) usingTTS = true;
+      else audio.addEventListener('error', ()=> { usingTTS = true; });
+
+      // initialize mute state
       if (isMuted && muteBtn) {
         muteBtn.classList.add('muted');
         muteBtn.setAttribute('aria-label','Unmute');
+        if (audio) audio.muted = true;
       }
 
-      if (playBtn) playBtn.addEventListener('click', ()=> { if (mv && mv.play) mv.play(); });
-      if (pauseBtn) pauseBtn.addEventListener('click', ()=> { if (mv && mv.pause) mv.pause(); });
-      if (muteBtn) muteBtn.addEventListener('click', ()=> {
+      // sync model time from audio
+      function syncModelToAudio(){
+        if (!audio || !mv) return;
+        // if durations known, map proportionally
+        if (audio.duration && mv.duration) {
+          const ratio = audio.currentTime / audio.duration;
+          mv.currentTime = mv.duration * ratio;
+        } else {
+          // fallback: set equal time
+          mv.currentTime = audio.currentTime;
+        }
+      }
+
+      // audio -> model
+      if (audio) {
+        audio.addEventListener('timeupdate', syncModelToAudio);
+        audio.addEventListener('seeked', syncModelToAudio);
+        audio.addEventListener('play', ()=>{ if (mv && mv.paused) mv.play(); });
+        audio.addEventListener('pause', ()=>{ if (mv && !mv.paused) mv.pause(); });
+        audio.addEventListener('ended', ()=>{ if (mv && !mv.paused) mv.pause(); });
+      }
+
+      // model -> audio
+      if (mv) {
+        mv.addEventListener('play', ()=>{ if (audio && audio.paused && !usingTTS) audio.play().catch(()=>{}); });
+        mv.addEventListener('pause', ()=>{ if (audio && !audio.paused && !usingTTS) audio.pause(); });
+      }
+
+      // play button triggers audio (preferred) and model play
+      if (playBtn) playBtn.addEventListener('click', ()=>{
+        if (audio && !usingTTS) {
+          // if audio is paused, play; if ended, reset to 0 and play
+          if (audio.ended) audio.currentTime = 0;
+          audio.play().catch(()=>{});
+        } else if (mv && mv.play) {
+          mv.play();
+        } else if (usingTTS) {
+          const text = 'Starte die AR-Ansicht. Das Modell lässt sich drehen; wende es, um die Schritte auch von der Rückseite zu betrachten.';
+          const u = new SpeechSynthesisUtterance(text); u.lang='de-DE'; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+        }
+      });
+
+      // pause button pauses audio and model
+      if (pauseBtn) pauseBtn.addEventListener('click', ()=>{
+        if (audio && !usingTTS) audio.pause();
+        if (mv && mv.pause) mv.pause();
+        if (usingTTS) { try { window.speechSynthesis.pause(); } catch (e) {} }
+      });
+
+      // mute toggles audio and model muted attribute
+      if (muteBtn) muteBtn.addEventListener('click', ()=>{
         isMuted = !isMuted;
         if (!mv) return;
         if (isMuted) {
           mv.setAttribute('muted','');
+          if (audio) audio.muted = true;
           muteBtn.classList.add('muted');
           muteBtn.setAttribute('aria-label','Unmute');
         } else {
           mv.removeAttribute('muted');
+          if (audio) audio.muted = false;
           muteBtn.classList.remove('muted');
           muteBtn.setAttribute('aria-label','Mute');
         }
       });
+
     })();
   </script>
 
 </body>
+
+
+
+
 </html>
