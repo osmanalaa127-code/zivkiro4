@@ -171,6 +171,9 @@
       let isMuted = mv && mv.hasAttribute && mv.hasAttribute('muted');
       let usingTTS = false;
 
+      // playback speed multiplier for the MODEL only
+      const PLAYBACK_SPEED = 1.3;
+
       // if audio fails or is unavailable, fall back to TTS
       if (!audio) usingTTS = true;
       else audio.addEventListener('error', ()=> { usingTTS = true; });
@@ -217,14 +220,47 @@
         audio.addEventListener('ended', ()=>{ if (mv && !mv.paused) mv.pause(); });
       }
 
-      // model -> audio
+      // model -> audio (when the model starts playing, align audio and set rates)
+      function speakText(){
+        const text = 'Starte die AR-Ansicht. Das Modell lässt sich drehen; wende es, um die Schritte auch von der Rückseite zu betrachten.';
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'de-DE';
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(u);
+      }
+
       if (mv) {
-        mv.addEventListener('play', ()=>{ if (audio && audio.paused && !usingTTS) audio.play().catch(()=>{}); });
+        mv.addEventListener('play', ()=>{
+          try { mv.timeScale = PLAYBACK_SPEED; } catch(e) {}
+          if (usingTTS) { speakText(); return; }
+          if (!audio) return;
+          try {
+            // align audio to the same relative playback position
+            if (audio.duration && mv.duration) {
+              const ratio = (mv.currentTime || 0) / mv.duration;
+              audio.currentTime = Math.min(audio.duration, Math.max(0, (audio.duration || 0) * ratio));
+            } else {
+              audio.currentTime = mv.currentTime || 0;
+            }
+          } catch(e) {}
+
+          if (!audio.paused) return;
+          const playPromise = audio.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(()=>{
+              // autoplay prevented - resume on user interaction
+              const resume = ()=>{ audio.play().catch(()=>{}); document.removeEventListener('pointerdown', resume); document.removeEventListener('keydown', resume); };
+              document.addEventListener('pointerdown', resume, {once:true});
+              document.addEventListener('keydown', resume, {once:true});
+            });
+          }
+        });
         mv.addEventListener('pause', ()=>{ if (audio && !audio.paused && !usingTTS) audio.pause(); });
       }
 
       // play button triggers audio (preferred) and model play
       if (playBtn) playBtn.addEventListener('click', ()=>{
+        try { if (mv) mv.timeScale = PLAYBACK_SPEED; } catch(e) {}
         if (audio && !usingTTS) {
           // if audio is paused, play; if ended, reset to 0 and play
           if (audio.ended) audio.currentTime = 0;
